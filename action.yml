@@ -16,7 +16,7 @@ inputs:
   unzip-to:
     description: 'Where to unzip the Qt Creator files to'
     required: true
-    default: '/qt-creator'
+    default: 'qt-creator'
 
 # Define your outputs here.
 outputs:
