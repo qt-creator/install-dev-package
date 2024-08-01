@@ -1,23 +1,27 @@
-name: 'The name of your action here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'Install Qt Creator development files'
+description: 'Installs Qt Creator and its _dev packages'
+author: 'The Qt Company'
 
 # Add your action's branding here. This will appear on the GitHub Marketplace.
 branding:
-  icon: 'heart'
-  color: 'red'
+  icon: 'archive'
+  color: 'green'
 
 # Define your inputs here.
 inputs:
-  milliseconds:
-    description: 'Your input description here'
+  version:
+    description: 'The version to install'
     required: true
-    default: '1000'
+    default: '14.0.0'
+  unzip-to:
+    description: 'Where to unzip the Qt Creator files to'
+    required: true
+    default: '/qt-creator'
 
 # Define your outputs here.
 outputs:
-  time:
-    description: 'Your output description here'
+  path:
+    description: 'Not used yet.'
 
 runs:
   using: node20
