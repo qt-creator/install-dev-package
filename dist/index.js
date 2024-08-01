@@ -30393,6 +30393,9 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.run = run;
 const core = __importStar(__nccwpck_require__(2186));
@@ -30400,6 +30403,8 @@ const fs = __importStar(__nccwpck_require__(7147));
 const stream_1 = __nccwpck_require__(2781);
 const promises_1 = __nccwpck_require__(4845);
 const node_7z_1 = __nccwpck_require__(8920);
+const path_1 = __importDefault(__nccwpck_require__(1017));
+const os_1 = __importDefault(__nccwpck_require__(2037));
 const PlatformMap = {
     darwin: 'mac',
     freebsd: 'linux',
@@ -30407,6 +30412,7 @@ const PlatformMap = {
     openbsd: 'linux',
     win32: 'windows'
 };
+const tmpDir = fs.mkdtempSync(path_1.default.join(os_1.default.tmpdir(), 'qt-creator-downloader'));
 // Download the url and save it to the specified file
 async function downloadPackage(url, destination) {
     const res = await fetch(url);
@@ -30419,11 +30425,11 @@ async function downloadQtC(urls) {
     const packages = ['qtcreator.7z', 'qtcreator_dev.7z'];
     for (const url of urls) {
         try {
-            console.log(`Downloading from ${url}`);
             for (const packageName of packages) {
-                await downloadPackage(`${url}/${packageName}`, packageName);
+                console.log(`Downloading ${url}/${packageName}`);
+                await downloadPackage(`${url}/${packageName}`, `${tmpDir}/${packageName}`);
             }
-            return packages;
+            return packages.map(packageName => `${tmpDir}/${packageName}`);
         }
         catch (error) {
             console.error(`Failed to download from ${url}:`, error);
@@ -30432,8 +30438,17 @@ async function downloadQtC(urls) {
     throw new Error('Failed to download Qt Creator packages');
 }
 async function extract(archive, destination) {
-    const stream = (0, node_7z_1.extractFull)(archive, destination, { $progress: true });
-    return (0, promises_1.finished)(stream);
+    return new Promise((resolve, reject) => {
+        const stream = (0, node_7z_1.extractFull)(archive, destination, {
+            $progress: true
+        });
+        stream.on('end', () => {
+            resolve();
+        });
+        stream.on('error', error => {
+            reject(error);
+        });
+    });
 }
 /**
  * The main function for the action.
@@ -30448,22 +30463,22 @@ async function run() {
             return;
         }
         const platformName = PlatformMap[process.platform];
-        const platform = `${platformName}_${process.arch}`;
+        const arch = process.platform === 'darwin' ? 'x64' : process.arch;
+        const platform = `${platformName}_${arch}`;
         // Extract the major and minor versions
         const [major, minor] = version.split('.').slice(0, 2);
-        const folderPath = `${major}.${minor}/${version}/`;
+        const folderPath = `${major}.${minor}/${version}`;
         const urls = [
             `https://download.qt.io/official_releases/qtcreator/${folderPath}/installer_source/${platform}`,
             `https://download.qt.io/snapshots/qtcreator/${folderPath}/installer_source/latest/${platform}`
         ];
         const packages = await downloadQtC(urls);
-        console.log('Downloaded Qt Creator packages');
         if (!fs.existsSync(destination)) {
             fs.mkdirSync(destination, { recursive: true });
         }
         for (const packageFile of packages) {
             // Unzip the downloaded file
-            console.log(`Unzipping Qt Creator package: ${packageFile}`);
+            console.log(`Unzipping package: ${packageFile}`);
             await extract(packageFile, destination);
         }
         console.log(`Qt Creator ${version} has been extracted to ${destination}`);
@@ -30471,7 +30486,7 @@ async function run() {
         core.setOutput('time', new Date().toTimeString());
     }
     catch (error) {
-        console.log('ERROR??', error);
+        console.log('Error:', error);
         // Fail the workflow run if an error occurs
         if (error instanceof Error)
             core.setFailed(error.message);

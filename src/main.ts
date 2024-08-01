@@ -4,6 +4,8 @@ import { Readable } from 'stream'
 import { finished } from 'stream/promises'
 import { ReadableStream } from 'stream/web'
 import { extractFull } from 'node-7z'
+import path from 'path'
+import os from 'os'
 
 const PlatformMap = {
   darwin: 'mac',
@@ -12,6 +14,8 @@ const PlatformMap = {
   openbsd: 'linux',
   win32: 'windows'
 }
+
+const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'qt-creator-downloader'))
 
 // Download the url and save it to the specified file
 async function downloadPackage(
@@ -28,11 +32,14 @@ async function downloadQtC(urls: string[]): Promise<string[]> {
   const packages = ['qtcreator.7z', 'qtcreator_dev.7z']
   for (const url of urls) {
     try {
-      console.log(`Downloading from ${url}`)
       for (const packageName of packages) {
-        await downloadPackage(`${url}/${packageName}`, packageName)
+        console.log(`Downloading ${url}/${packageName}`)
+        await downloadPackage(
+          `${url}/${packageName}`,
+          `${tmpDir}/${packageName}`
+        )
       }
-      return packages
+      return packages.map(packageName => `${tmpDir}/${packageName}`)
     } catch (error) {
       console.error(`Failed to download from ${url}:`, error)
     }
@@ -41,8 +48,17 @@ async function downloadQtC(urls: string[]): Promise<string[]> {
 }
 
 async function extract(archive: string, destination: string): Promise<void> {
-  const stream = extractFull(archive, destination, { $progress: true })
-  return finished(stream)
+  return new Promise((resolve, reject) => {
+    const stream = extractFull(archive, destination, {
+      $progress: true
+    })
+    stream.on('end', () => {
+      resolve()
+    })
+    stream.on('error', error => {
+      reject(error)
+    })
+  })
 }
 
 /**
@@ -61,11 +77,12 @@ export async function run(): Promise<void> {
 
     const platformName: string =
       PlatformMap[process.platform as keyof typeof PlatformMap]
-    const platform = `${platformName}_${process.arch}`
+    const arch = process.platform === 'darwin' ? 'x64' : process.arch
+    const platform = `${platformName}_${arch}`
 
     // Extract the major and minor versions
     const [major, minor] = version.split('.').slice(0, 2)
-    const folderPath = `${major}.${minor}/${version}/`
+    const folderPath = `${major}.${minor}/${version}`
 
     const urls = [
       `https://download.qt.io/official_releases/qtcreator/${folderPath}/installer_source/${platform}`,
@@ -73,7 +90,6 @@ export async function run(): Promise<void> {
     ]
 
     const packages = await downloadQtC(urls)
-    console.log('Downloaded Qt Creator packages')
 
     if (!fs.existsSync(destination)) {
       fs.mkdirSync(destination, { recursive: true })
@@ -81,7 +97,7 @@ export async function run(): Promise<void> {
 
     for (const packageFile of packages) {
       // Unzip the downloaded file
-      console.log(`Unzipping Qt Creator package: ${packageFile}`)
+      console.log(`Unzipping package: ${packageFile}`)
       await extract(packageFile, destination)
     }
 
@@ -90,7 +106,7 @@ export async function run(): Promise<void> {
     // Set outputs for other workflow steps to use
     core.setOutput('time', new Date().toTimeString())
   } catch (error) {
-    console.log('ERROR??', error)
+    console.log('Error:', error)
     // Fail the workflow run if an error occurs
     if (error instanceof Error) core.setFailed(error.message)
   }
