@@ -30483,7 +30483,7 @@ async function run() {
         }
         console.log(`Qt Creator ${version} has been extracted to ${destination}`);
         // Set outputs for other workflow steps to use
-        core.setOutput('time', new Date().toTimeString());
+        core.setOutput('path', destination);
     }
     catch (error) {
         console.log('Error:', error);

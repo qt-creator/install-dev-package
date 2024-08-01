@@ -104,7 +104,7 @@ export async function run(): Promise<void> {
     console.log(`Qt Creator ${version} has been extracted to ${destination}`)
 
     // Set outputs for other workflow steps to use
-    core.setOutput('time', new Date().toTimeString())
+    core.setOutput('path', destination)
   } catch (error) {
     console.log('Error:', error)
     // Fail the workflow run if an error occurs

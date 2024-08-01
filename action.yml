@@ -21,7 +21,7 @@ inputs:
 # Define your outputs here.
 outputs:
   path:
-    description: 'Not used yet.'
+    description: 'Path to the extracted files.'
 
 runs:
   using: node20
