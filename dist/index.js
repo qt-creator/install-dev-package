@@ -30418,24 +30418,29 @@ async function downloadPackage(url, destination) {
     const res = await fetch(url);
     if (!res.body)
         throw new Error('Response body is undefined');
+    if (res.status !== 200) {
+        throw new Error(`Failed to download ${url}: ${res.statusText}`);
+    }
     const fileStream = fs.createWriteStream(destination, { flags: 'wx' });
     return (0, promises_1.finished)(stream_1.Readable.fromWeb(res.body).pipe(fileStream));
 }
 async function downloadQtC(urls) {
+    const errors = [];
     const packages = ['qtcreator.7z', 'qtcreator_dev.7z'];
     for (const url of urls) {
         try {
             for (const packageName of packages) {
-                console.log(`Downloading ${url}/${packageName}`);
-                await downloadPackage(`${url}/${packageName}`, `${tmpDir}/${packageName}`);
+                const fullUrl = `${url}/${packageName}`;
+                console.log(`Downloading ${fullUrl}`);
+                await downloadPackage(fullUrl, `${tmpDir}/${packageName}`);
             }
             return packages.map(packageName => `${tmpDir}/${packageName}`);
         }
         catch (error) {
-            console.error(`Failed to download from ${url}:`, error);
+            errors.push(error.message);
         }
     }
-    throw new Error('Failed to download Qt Creator packages');
+    throw new Error(`Failed to download Qt Creator packages: ${errors.join('\n')}`);
 }
 async function extract(archive, destination) {
     return new Promise((resolve, reject) => {

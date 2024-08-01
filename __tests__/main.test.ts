@@ -40,7 +40,7 @@ describe('action', () => {
     getInputMock.mockImplementation(name => {
       switch (name) {
         case 'version':
-          return '14.0.0'
+          return '15.0.0-beta1'
         case 'unzip-to':
           return tmpDir
         default:
