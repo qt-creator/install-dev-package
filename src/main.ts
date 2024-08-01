@@ -90,6 +90,7 @@ export async function run(): Promise<void> {
     // Set outputs for other workflow steps to use
     core.setOutput('time', new Date().toTimeString())
   } catch (error) {
+    console.log('ERROR??', error)
     // Fail the workflow run if an error occurs
     if (error instanceof Error) core.setFailed(error.message)
   }

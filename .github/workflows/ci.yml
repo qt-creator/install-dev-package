@@ -57,7 +57,8 @@ jobs:
         id: test-action
         uses: ./
         with:
-          milliseconds: 2000
+          version: 14.0.0
+          unzip-to: qt-creator
 
       - name: Print Output
         id: output
