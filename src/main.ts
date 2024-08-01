@@ -1,5 +1,65 @@
 import * as core from '@actions/core'
-import { wait } from './wait'
+import * as fs from 'fs'
+import { Readable } from 'stream'
+import { finished } from 'stream/promises'
+import { ReadableStream } from 'stream/web'
+import { extractFull } from 'node-7z'
+import path from 'path'
+import os from 'os'
+
+const PlatformMap = {
+  darwin: 'mac',
+  freebsd: 'linux',
+  linux: 'linux',
+  openbsd: 'linux',
+  win32: 'windows'
+}
+
+const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'qt-creator-downloader'))
+
+// Download the url and save it to the specified file
+async function downloadPackage(
+  url: string,
+  destination: string
+): Promise<void> {
+  const res = await fetch(url)
+  if (!res.body) throw new Error('Response body is undefined')
+  const fileStream = fs.createWriteStream(destination, { flags: 'wx' })
+  return finished(Readable.fromWeb(res.body as ReadableStream).pipe(fileStream))
+}
+
+async function downloadQtC(urls: string[]): Promise<string[]> {
+  const packages = ['qtcreator.7z', 'qtcreator_dev.7z']
+  for (const url of urls) {
+    try {
+      for (const packageName of packages) {
+        console.log(`Downloading ${url}/${packageName}`)
+        await downloadPackage(
+          `${url}/${packageName}`,
+          `${tmpDir}/${packageName}`
+        )
+      }
+      return packages.map(packageName => `${tmpDir}/${packageName}`)
+    } catch (error) {
+      console.error(`Failed to download from ${url}:`, error)
+    }
+  }
+  throw new Error('Failed to download Qt Creator packages')
+}
+
+async function extract(archive: string, destination: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const stream = extractFull(archive, destination, {
+      $progress: true
+    })
+    stream.on('end', () => {
+      resolve()
+    })
+    stream.on('error', error => {
+      reject(error)
+    })
+  })
+}
 
 /**
  * The main function for the action.
@@ -7,19 +67,46 @@ import { wait } from './wait'
  */
 export async function run(): Promise<void> {
   try {
-    const ms: string = core.getInput('milliseconds')
+    const version: string = core.getInput('version')
+    const destination: string = core.getInput('unzip-to')
 
-    // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
-    core.debug(`Waiting ${ms} milliseconds ...`)
+    if (!(process.platform in PlatformMap)) {
+      core.setFailed(`Unsupported platform: ${process.platform}`)
+      return
+    }
 
-    // Log the current timestamp, wait, then log the new timestamp
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
+    const platformName: string =
+      PlatformMap[process.platform as keyof typeof PlatformMap]
+    const arch = process.platform === 'darwin' ? 'x64' : process.arch
+    const platform = `${platformName}_${arch}`
+
+    // Extract the major and minor versions
+    const [major, minor] = version.split('.').slice(0, 2)
+    const folderPath = `${major}.${minor}/${version}`
+
+    const urls = [
+      `https://download.qt.io/official_releases/qtcreator/${folderPath}/installer_source/${platform}`,
+      `https://download.qt.io/snapshots/qtcreator/${folderPath}/installer_source/latest/${platform}`
+    ]
+
+    const packages = await downloadQtC(urls)
+
+    if (!fs.existsSync(destination)) {
+      fs.mkdirSync(destination, { recursive: true })
+    }
+
+    for (const packageFile of packages) {
+      // Unzip the downloaded file
+      console.log(`Unzipping package: ${packageFile}`)
+      await extract(packageFile, destination)
+    }
+
+    console.log(`Qt Creator ${version} has been extracted to ${destination}`)
 
     // Set outputs for other workflow steps to use
-    core.setOutput('time', new Date().toTimeString())
+    core.setOutput('path', destination)
   } catch (error) {
+    console.log('Error:', error)
     // Fail the workflow run if an error occurs
     if (error instanceof Error) core.setFailed(error.message)
   }
