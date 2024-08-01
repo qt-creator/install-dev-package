@@ -42,13 +42,6 @@ async function downloadQtC(urls: string[]): Promise<string[]> {
 
 async function extract(archive: string, destination: string): Promise<void> {
   const stream = extractFull(archive, destination, { $progress: true })
-  let lastProgress = 0
-  stream.on('progress', progress => {
-    if (progress.percent === lastProgress) return
-    lastProgress = progress.percent
-    console.log(`${progress.percent}%`)
-  })
-
   return finished(stream)
 }
 
@@ -85,12 +78,14 @@ export async function run(): Promise<void> {
     if (!fs.existsSync(destination)) {
       fs.mkdirSync(destination, { recursive: true })
     }
-    // Unzip the downloaded file
-    console.log('Unzipping Qt Creator packages')
 
     for (const packageFile of packages) {
+      // Unzip the downloaded file
+      console.log(`Unzipping Qt Creator package: ${packageFile}`)
       await extract(packageFile, destination)
     }
+
+    console.log(`Qt Creator ${version} has been extracted to ${destination}`)
 
     // Set outputs for other workflow steps to use
     core.setOutput('time', new Date().toTimeString())
