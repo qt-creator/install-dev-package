@@ -109,6 +109,10 @@ export async function run(): Promise<void> {
 
     // Set outputs for other workflow steps to use
     core.setOutput('path', destination)
+    core.setOutput(
+      'path-with-slashes',
+      path.resolve(destination).split(path.sep).join('/')
+    )
   } catch (error) {
     console.log('Error:', error)
     // Fail the workflow run if an error occurs

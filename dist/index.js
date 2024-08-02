@@ -30489,6 +30489,7 @@ async function run() {
         console.log(`Qt Creator ${version} has been extracted to ${destination}`);
         // Set outputs for other workflow steps to use
         core.setOutput('path', destination);
+        core.setOutput('path-with-slashes', path_1.default.resolve(destination).split(path_1.default.sep).join('/'));
     }
     catch (error) {
         console.log('Error:', error);
