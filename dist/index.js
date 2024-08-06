@@ -30431,7 +30431,7 @@ async function downloadQtC(urls) {
         try {
             for (const packageName of packages) {
                 const fullUrl = `${url}/${packageName}`;
-                console.log(`Downloading ${fullUrl}`);
+                core.info(`Downloading ${fullUrl}`);
                 await downloadPackage(fullUrl, `${tmpDir}/${packageName}`);
             }
             return packages.map(packageName => `${tmpDir}/${packageName}`);
@@ -30483,15 +30483,15 @@ async function run() {
         }
         for (const packageFile of packages) {
             // Unzip the downloaded file
-            console.log(`Unzipping package: ${packageFile}`);
+            core.info(`Unzipping package: ${packageFile}`);
             await extract(packageFile, destination);
         }
-        console.log(`Qt Creator ${version} has been extracted to ${destination}`);
+        core.info(`Qt Creator ${version} has been extracted to ${destination}`);
         // Set outputs for other workflow steps to use
         core.setOutput('path', destination);
+        core.setOutput('path-with-slashes', path_1.default.resolve(destination).split(path_1.default.sep).join('/'));
     }
     catch (error) {
-        console.log('Error:', error);
         // Fail the workflow run if an error occurs
         if (error instanceof Error)
             core.setFailed(error.message);

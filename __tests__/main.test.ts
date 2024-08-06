@@ -26,6 +26,7 @@ const tmpDir = fs.mkdtempSync(
 // Mock the GitHub Actions core library
 let errorMock: jest.SpiedFunction<typeof core.error>
 let getInputMock: jest.SpiedFunction<typeof core.getInput>
+let setOutputMock: jest.SpiedFunction<typeof core.setOutput>
 
 describe('action', () => {
   beforeEach(() => {
@@ -33,6 +34,7 @@ describe('action', () => {
 
     errorMock = jest.spyOn(core, 'error').mockImplementation()
     getInputMock = jest.spyOn(core, 'getInput').mockImplementation()
+    setOutputMock = jest.spyOn(core, 'setOutput').mockImplementation()
   })
 
   it('downloads 14.0.0', async () => {
@@ -40,7 +42,7 @@ describe('action', () => {
     getInputMock.mockImplementation(name => {
       switch (name) {
         case 'version':
-          return '15.0.0-beta1'
+          return '14.0.0'
         case 'unzip-to':
           return tmpDir
         default:
@@ -51,5 +53,14 @@ describe('action', () => {
     await main.run()
     expect(runMock).toHaveReturned()
     expect(errorMock).not.toHaveBeenCalled()
+
+    expect(setOutputMock).toHaveBeenCalledWith(
+      'path',
+      expect.stringContaining(tmpDir)
+    )
+    expect(setOutputMock).toHaveBeenCalledWith(
+      'path-with-slashes',
+      expect.not.stringContaining('\\')
+    )
   })
 })
