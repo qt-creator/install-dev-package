@@ -6,6 +6,7 @@ import { ReadableStream } from 'stream/web'
 import { extractFull } from 'node-7z'
 import path from 'path'
 import os from 'os'
+import util from 'util'
 
 const PlatformMap = {
   darwin: 'mac',
@@ -43,8 +44,8 @@ async function downloadQtC(urls: string[]): Promise<string[]> {
       }
       return packages.map(packageName => `${tmpDir}/${packageName}`)
     } catch (error) {
-      core.warning((error as Error).message)
-      errors.push((error as Error).message)
+      core.warning(util.inspect(error))
+      errors.push(util.inspect(error))
     }
   }
   throw new Error(
@@ -118,6 +119,6 @@ export async function run(): Promise<void> {
     )
   } catch (error) {
     // Fail the workflow run if an error occurs
-    core.setFailed((error as Error).message)
+    core.setFailed(util.inspect(error))
   }
 }

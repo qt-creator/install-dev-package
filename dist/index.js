@@ -30405,6 +30405,7 @@ const promises_1 = __nccwpck_require__(4845);
 const node_7z_1 = __nccwpck_require__(8920);
 const path_1 = __importDefault(__nccwpck_require__(1017));
 const os_1 = __importDefault(__nccwpck_require__(2037));
+const util_1 = __importDefault(__nccwpck_require__(3837));
 const PlatformMap = {
     darwin: 'mac',
     freebsd: 'linux',
@@ -30437,8 +30438,8 @@ async function downloadQtC(urls) {
             return packages.map(packageName => `${tmpDir}/${packageName}`);
         }
         catch (error) {
-            core.warning(error.message);
-            errors.push(error.message);
+            core.warning(util_1.default.inspect(error));
+            errors.push(util_1.default.inspect(error));
         }
     }
     throw new Error(`Failed to download Qt Creator packages: ${errors.join('\n')}`);
@@ -30495,7 +30496,7 @@ async function run() {
     }
     catch (error) {
         // Fail the workflow run if an error occurs
-        core.setFailed(error.message);
+        core.setFailed(util_1.default.inspect(error));
     }
 }
 
