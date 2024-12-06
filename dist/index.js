@@ -30437,6 +30437,7 @@ async function downloadQtC(urls) {
             return packages.map(packageName => `${tmpDir}/${packageName}`);
         }
         catch (error) {
+            core.warning(error.message);
             errors.push(error.message);
         }
     }
@@ -30463,13 +30464,14 @@ async function run() {
     try {
         const version = core.getInput('version');
         const destination = core.getInput('unzip-to');
-        if (!(process.platform in PlatformMap)) {
+        const platformInput = core.getInput('platform');
+        if (!platformInput && !(process.platform in PlatformMap)) {
             core.setFailed(`Unsupported platform: ${process.platform}`);
             return;
         }
         const platformName = PlatformMap[process.platform];
         const arch = process.platform === 'darwin' ? 'x64' : process.arch;
-        const platform = `${platformName}_${arch}`;
+        const platform = platformInput ? platformInput : `${platformName}_${arch}`;
         // Extract the major and minor versions
         const [major, minor] = version.split('.').slice(0, 2);
         const folderPath = `${major}.${minor}/${version}`;
@@ -30493,8 +30495,7 @@ async function run() {
     }
     catch (error) {
         // Fail the workflow run if an error occurs
-        if (error instanceof Error)
-            core.setFailed(error.message);
+        core.setFailed(error.message);
     }
 }
 

@@ -43,6 +43,7 @@ async function downloadQtC(urls: string[]): Promise<string[]> {
       }
       return packages.map(packageName => `${tmpDir}/${packageName}`)
     } catch (error) {
+      core.warning((error as Error).message)
       errors.push((error as Error).message)
     }
   }
@@ -73,8 +74,9 @@ export async function run(): Promise<void> {
   try {
     const version: string = core.getInput('version')
     const destination: string = core.getInput('unzip-to')
+    const platformInput: string = core.getInput('platform')
 
-    if (!(process.platform in PlatformMap)) {
+    if (!platformInput && !(process.platform in PlatformMap)) {
       core.setFailed(`Unsupported platform: ${process.platform}`)
       return
     }
@@ -82,7 +84,8 @@ export async function run(): Promise<void> {
     const platformName: string =
       PlatformMap[process.platform as keyof typeof PlatformMap]
     const arch = process.platform === 'darwin' ? 'x64' : process.arch
-    const platform = `${platformName}_${arch}`
+
+    const platform = platformInput ? platformInput : `${platformName}_${arch}`
 
     // Extract the major and minor versions
     const [major, minor] = version.split('.').slice(0, 2)
@@ -115,6 +118,6 @@ export async function run(): Promise<void> {
     )
   } catch (error) {
     // Fail the workflow run if an error occurs
-    if (error instanceof Error) core.setFailed(error.message)
+    core.setFailed((error as Error).message)
   }
 }
