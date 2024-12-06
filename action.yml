@@ -17,6 +17,9 @@ inputs:
     description: 'Where to unzip the Qt Creator files to'
     required: true
     default: 'qt-creator'
+  platform:
+    description: 'Overwrite platform detection'
+    required: false
 
 # Define your outputs here.
 outputs:

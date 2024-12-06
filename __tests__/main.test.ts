@@ -45,6 +45,8 @@ describe('action', () => {
           return '15.0.0'
         case 'unzip-to':
           return tmpDir
+        case 'platform':
+          return 'linux_x64'
         default:
           return ''
       }
