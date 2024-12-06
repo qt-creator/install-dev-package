@@ -30437,6 +30437,7 @@ async function downloadQtC(urls) {
             return packages.map(packageName => `${tmpDir}/${packageName}`);
         }
         catch (error) {
+            core.warning(error.message);
             errors.push(error.message);
         }
     }
