@@ -43,6 +43,7 @@ async function downloadQtC(urls: string[]): Promise<string[]> {
       }
       return packages.map(packageName => `${tmpDir}/${packageName}`)
     } catch (error) {
+      core.warning((error as Error).message)
       errors.push((error as Error).message)
     }
   }
