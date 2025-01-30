@@ -3,10 +3,11 @@ import * as fs from 'fs'
 import { Readable } from 'stream'
 import { finished } from 'stream/promises'
 import { ReadableStream } from 'stream/web'
-import { extractFull } from 'node-7z'
 import path from 'path'
 import os from 'os'
 import util from 'util'
+import { readFile, writeFile, mkdir, symlink } from 'node:fs/promises'
+import { ArchiveReader, libarchiveWasm } from 'libarchive-wasm'
 
 const PlatformMap = {
   darwin: 'mac',
@@ -54,17 +55,45 @@ async function downloadQtC(urls: string[]): Promise<string[]> {
 }
 
 async function extract(archive: string, destination: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const stream = extractFull(archive, destination, {
-      $progress: true
-    })
-    stream.on('end', () => {
-      resolve()
-    })
-    stream.on('error', error => {
-      reject(error)
-    })
-  })
+  console.log('Extracting', archive, 'to', destination)
+  const data = await readFile(archive)
+  const mod = await libarchiveWasm()
+  const reader = new ArchiveReader(mod, new Int8Array(data))
+  for (const entry of reader.entries()) {
+    const type = entry.getFiletype()
+    const pathName = entry.getPathname()
+    const destinationPath = path.join(destination, pathName)
+
+    if (path.isAbsolute(pathName)) {
+      throw new Error('Absolute path in archive detected, aborting.')
+    }
+
+    if (type === 'Directory') {
+      if (!fs.existsSync(destinationPath)) {
+        await mkdir(destinationPath)
+      } else if (!fs.statSync(destinationPath).isDirectory()) {
+        throw new Error(
+          `Path already exists and is not a directory: ${destinationPath}`
+        )
+      }
+      continue
+    } else if (type === 'SymbolicLink') {
+      await symlink(entry.getSymlinkTarget(), destinationPath)
+      continue
+    } else if (type === 'File') {
+      const size = entry.getSize()
+      if (size > 0) {
+        const entryData = entry.readData()
+        if (!entryData) throw new Error(`Failed to read data for ${pathName}`)
+        await writeFile(destinationPath, entryData)
+      } else {
+        await writeFile(destinationPath, '')
+      }
+    } else {
+      throw new Error(`Unsupported entry type: ${type}`)
+    }
+  }
+  reader.free()
 }
 
 /**
