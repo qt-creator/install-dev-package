@@ -6,7 +6,7 @@ This action allows you to install the Qt Creator development packages.
 
 ```yaml
 steps:
-  uses: qt-creator/install-dev-packages@v1.4
+  uses: qt-creator/install-dev-packages@v2.0
   with:
-    version: 14.0.0
+    version: 15.0.0
 ```
