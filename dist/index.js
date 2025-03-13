@@ -27877,6 +27877,7 @@ async function run() {
         const folderPath = `${major}.${minor}/${version}`;
         const urls = [
             `https://download.qt.io/official_releases/qtcreator/${folderPath}/installer_source/${platform}`,
+            `https://download.qt.io/development_releases/qtcreator/${folderPath}/installer_source/${platform}`,
             `https://download.qt.io/snapshots/qtcreator/${folderPath}/installer_source/latest/${platform}`
         ];
         const packages = await downloadQtC(urls);
