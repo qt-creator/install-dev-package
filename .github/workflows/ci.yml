@@ -57,7 +57,7 @@ jobs:
         id: test-action
         uses: ./
         with:
-          version: 15.0.0
+          version: 17.0.0
           unzip-to: qt-creator
 
       - name: Print Output

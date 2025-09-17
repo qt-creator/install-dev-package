@@ -37,12 +37,12 @@ describe('action', () => {
     setOutputMock = jest.spyOn(core, 'setOutput').mockImplementation()
   })
 
-  it('downloads 15.0.0', async () => {
+  it('downloads 17.0.0', async () => {
     // Set the action's inputs as return values from core.getInput()
     getInputMock.mockImplementation(name => {
       switch (name) {
         case 'version':
-          return '15.0.0'
+          return '17.0.0'
         case 'unzip-to':
           return tmpDir
         case 'platform':
