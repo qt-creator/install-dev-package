@@ -50,3 +50,5 @@ jobs:
           VALIDATE_JSCPD: false
           VALIDATE_GITHUB_ACTIONS_ZIZMOR: false
           VALIDATE_MARKDOWN: false
+          VALIDATE_BIOME_LINT: false
+          VALIDATE_BIOME_FORMAT: false
