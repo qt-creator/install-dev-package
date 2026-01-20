@@ -67,7 +67,7 @@
     ]
   },
   "dependencies": {
-    "@actions/core": "^1.11.1",
+    "@actions/core": "^2.0.2",
     "axios": "^1.13.2",
     "libarchive-wasm": "github:Maddimax/libarchive-wasm"
   },
