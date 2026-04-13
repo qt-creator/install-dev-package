@@ -60,7 +60,7 @@ describe('action', () => {
 
   it('downloads 17.0.0', async () => {
     // Set the action's inputs as return values from core.getInput()
-    getInputMock.mockImplementation((name: string) => {
+    getInputMock.mockImplementation(name => {
       switch (name) {
         case 'version':
           return '17.0.0'
