@@ -11,6 +11,17 @@ import * as main from '../src/main'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
+import { ReadableStream } from 'stream/web'
+
+jest.mock('libarchive-wasm', () => ({
+  ArchiveReader: class {
+    entries(): [] {
+      return []
+    }
+    free(): void {}
+  },
+  libarchiveWasm: jest.fn(async () => ({}))
+}))
 
 // Mock the action's main function
 const runMock = jest.spyOn(main, 'run')
@@ -27,6 +38,7 @@ const tmpDir = fs.mkdtempSync(
 let errorMock: jest.SpiedFunction<typeof core.error>
 let getInputMock: jest.SpiedFunction<typeof core.getInput>
 let setOutputMock: jest.SpiedFunction<typeof core.setOutput>
+let fetchMock: jest.SpiedFunction<typeof globalThis.fetch>
 
 describe('action', () => {
   beforeEach(() => {
@@ -35,6 +47,15 @@ describe('action', () => {
     errorMock = jest.spyOn(core, 'error').mockImplementation()
     getInputMock = jest.spyOn(core, 'getInput').mockImplementation()
     setOutputMock = jest.spyOn(core, 'setOutput').mockImplementation()
+    fetchMock = jest.spyOn(globalThis, 'fetch').mockImplementation(async () => {
+      const stream = new ReadableStream({
+        start(controller: ReadableStreamDefaultController<Uint8Array>) {
+          controller.enqueue(new Uint8Array([1, 2, 3]))
+          controller.close()
+        }
+      })
+      return new Response(stream, { status: 200, statusText: 'OK' })
+    })
   })
 
   it('downloads 17.0.0', async () => {
@@ -64,5 +85,6 @@ describe('action', () => {
       'path-with-slashes',
       expect.not.stringContaining('\\')
     )
+    expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 })
